@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aurora – UI State Visualizer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #020617;
+      color: #e5e7eb;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 280px;
+      padding: 16px 18px;
+      border-right: 1px solid #1f2937;
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .sidebar small {
+      color: #9ca3af;
+    }
+
+    .section {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .section h2 {
+      margin: 0 0 4px;
+      font-size: 13px;
+    }
+
+    .state-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .state-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #020617;
+      color: #9ca3af;
+      cursor: pointer;
+    }
+
+    .state-pill.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .legend-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 11px;
+      color: #9ca3af;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .legend-list span {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .frame {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid #1f2937;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 55%, #000 100%);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+    }
+
+    .frame-inner {
+      position: absolute;
+      inset: 24px;
+      border-radius: 12px;
+      border: 1px solid #111827;
+    }
+
+    .ui-btn {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 2px solid #1e293b;
+      background: rgba(15,23,42,0.95);
+      color: #f9fafb;
+      box-shadow: 0 4px 10px rgba(15,23,42,0.7);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .ui-circle {
+      width: 60px;
+      height: 60px;
+    }
+
+    .ui-circle.small {
+      width: 48px;
+      height: 48px;
+      font-size: 13px;
+    }
+
+    .ui-circle.large {
+      width: 90px;
+      height: 90px;
+    }
+
+    .ui-square {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+    }
+
+    .ui-label {
+      position: absolute;
+      font-size: 10px;
+      color: #9ca3af;
+      pointer-events: none;
+      text-shadow: 0 1px 2px #020617;
+    }
+
+    .center-indicator {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 40px;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div>
+      <h1>UI State Visualizer</h1>
+      <small>Aurora – Player HUD by state</small>
+    </div>
+
+    <div class="section">
+      <h2>Player States</h2>
+      <div class="state-list">
+        <div class="state-pill active" data-state="general">
+          <span>General / Free Roam</span>
+          <span>✔</span>
+        </div>
+        <div class="state-pill" data-state="object">
+          <span>Object Interaction</span>
+          <span>●</span>
+        </div>
+        <div class="state-pill" data-state="glide">
+          <span>Gliding</span>
+          <span>🪂</span>
+        </div>
+        <div class="state-pill" data-state="drive">
+          <span>Driving</span>
+          <span>🚗</span>
+        </div>
+      </div>
+      <div id="stateHint" class="hint" style="margin-top:4px;">
+        General HUD when player is idle or freely roaming.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>HUD Elements</h2>
+      <ul class="legend-list">
+        <li><span>Joystick</span> – Movement (bottom left)</li>
+        <li><span>Minimap</span> – World overview (top left)</li>
+        <li><span>Leaderboard</span> – Ranking overlay</li>
+        <li><span>Coins</span> – Soft currency</li>
+        <li><span>Gems</span> – Premium currency</li>
+        <li><span>Mic</span> – Mute / unmute voice chat</li>
+        <li><span>Emoji</span> – Emote / emoji wheel</li>
+        <li><span>Jump</span> – Primary action (running)</li>
+        <li><span>Interact</span> – Use / enter / exit object (contextual)</li>
+        <li><span>Glide</span> – Deploy / cut paraglider</li>
+        <li><span>Brake / Accel</span> – Vehicle controls</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Notes</h2>
+      <div class="hint" id="notesText">
+        • All base HUD anchors remain fixed across states.<br/>
+        • Only the bottom-right action cluster changes per state.
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="frame">
+      <div class="frame-inner">
+
+        <!-- Joystick (bottom-left) -->
+        <div id="btnJoystick" class="ui-btn ui-circle large" style="left: 40px; bottom: 40px; opacity: 0.9;">
+          <div style="width:52px;height:52px;border-radius:999px;border:2px solid #4b5563;"></div>
+        </div>
+        <div class="ui-label" style="left: 54px; bottom: 32px;">Joystick</div>
+
+        <!-- Minimap (top-left) -->
+        <div id="btnMinimap" class="ui-btn ui-circle" style="left: 40px; top: 40px;">
+          <div style="width:32px;height:32px;border-radius:999px;border:2px solid #4b5563;"></div>
+        </div>
+        <div class="ui-label" style="left: 52px; top: 32px;">Minimap</div>
+
+        <!-- Leaderboard -->
+        <div id="btnLeaderboard" class="ui-btn ui-square" style="left: 132px; top: 52px;">
+          LB
+        </div>
+        <div class="ui-label" style="left: 130px; top: 32px;">Leaderboard</div>
+
+        <!-- Coins -->
+        <div id="btnCoins" class="ui-btn ui-circle small" style="right: 120px; top: 40px;">
+          🪙
+        </div>
+        <div class="ui-label" style="right: 122px; top: 32px;">Coins</div>
+
+        <!-- Gems -->
+        <div id="btnGems" class="ui-btn ui-circle small" style="right: 56px; top: 40px;">
+          ♦
+        </div>
+        <div class="ui-label" style="right: 58px; top: 32px;">Gems</div>
+
+        <!-- Mic -->
+        <div id="btnMic" class="ui-btn ui-circle small" style="right: 56px; top: 180px;">
+          🎤
+        </div>
+        <div class="ui-label" style="right: 56px; top: 170px;">Mic</div>
+
+        <!-- Emoji -->
+        <div id="btnEmoji" class="ui-btn ui-circle small" style="right: 56px; top: 250px;">
+          😊
+        </div>
+        <div class="ui-label" style="right: 58px; top: 240px;">Emoji</div>
+
+        <!-- Jump (bottom-right) -->
+        <div id="btnJump" class="ui-btn ui-circle" style="right: 80px; bottom: 60px;">
+          ⤴
+        </div>
+        <div id="lblJump" class="ui-label" style="right: 84px; bottom: 52px;">Jump</div>
+
+        <!-- Interact button (left of jump) -->
+        <div id="btnInteract" class="ui-btn ui-circle small hidden" style="right: 160px; bottom: 70px;">
+          ⓔ
+        </div>
+        <div id="lblInteract" class="ui-label hidden" style="right: 166px; bottom: 52px;">Interact / Exit</div>
+
+        <!-- Glide button (replaces Jump) -->
+        <div id="btnGlide" class="ui-btn ui-circle hidden" style="right: 80px; bottom: 60px;">
+          🪂
+        </div>
+        <div id="lblGlide" class="ui-label hidden" style="right: 88px; bottom: 52px;">Glide Toggle</div>
+
+        <!-- Brake / Accelerator (driving) -->
+        <div id="btnBrake" class="ui-btn ui-circle small hidden" style="right: 160px; bottom: 70px;">
+          ⛔
+        </div>
+        <div id="lblBrake" class="ui-label hidden" style="right: 170px; bottom: 52px;">Brake</div>
+
+        <div id="btnAccel" class="ui-btn ui-circle small hidden" style="right: 80px; bottom: 70px;">
+          ▶
+        </div>
+        <div id="lblAccel" class="ui-label hidden" style="right: 90px; bottom: 52px;">Accelerate</div>
+
+        <!-- Center indicators -->
+        <div id="indicatorObject" class="center-indicator hidden">⚽</div>
+        <div id="indicatorGlide" class="center-indicator hidden">🪂</div>
+        <div id="indicatorDrive" class="center-indicator hidden">🚗</div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const statePills = document.querySelectorAll(".state-pill");
+    const stateHint = document.getElementById("stateHint");
+    const notesText = document.getElementById("notesText");
+
+    const elements = {
+      jump: document.getElementById("btnJump"),
+      lblJump: document.getElementById("lblJump"),
+      interact: document.getElementById("btnInteract"),
+      lblInteract: document.getElementById("lblInteract"),
+      glide: document.getElementById("btnGlide"),
+      lblGlide: document.getElementById("lblGlide"),
+      brake: document.getElementById("btnBrake"),
+      lblBrake: document.getElementById("lblBrake"),
+      accel: document.getElementById("btnAccel"),
+      lblAccel: document.getElementById("lblAccel"),
+      indObject: document.getElementById("indicatorObject"),
+      indGlide: document.getElementById("indicatorGlide"),
+      indDrive: document.getElementById("indicatorDrive")
+    };
+
+    let currentState = "general";
+
+    function setVisible(el, visible) {
+      if (!el) return;
+      if (visible) el.classList.remove("hidden");
+      else el.classList.add("hidden");
+    }
+
+    function renderState() {
+      // Reset all dynamic elements
+      setVisible(elements.interact, false);
+      setVisible(elements.lblInteract, false);
+      setVisible(elements.glide, false);
+      setVisible(elements.lblGlide, false);
+      setVisible(elements.brake, false);
+      setVisible(elements.lblBrake, false);
+      setVisible(elements.accel, false);
+      setVisible(elements.lblAccel, false);
+      setVisible(elements.indObject, false);
+      setVisible(elements.indGlide, false);
+      setVisible(elements.indDrive, false);
+
+      // Default: jump visible in all except glide/drive
+      setVisible(elements.jump, true);
+      setVisible(elements.lblJump, true);
+
+      switch (currentState) {
+        case "general":
+          stateHint.textContent = "General HUD when player is idle or freely roaming.";
+          notesText.textContent =
+            "• All base HUD anchors remain fixed in this state.\n" +
+            "• No contextual object, vehicle or glide actions are active.";
+          break;
+
+        case "object":
+          stateHint.textContent =
+            "Contextual interaction: player is near an object (ball, vehicle, etc.).";
+          notesText.textContent =
+            "• Interact button appears next to Jump when close to usable objects.\n" +
+            "• Same button can be reused as Exit / Uninteract after entering.";
+          setVisible(elements.interact, true);
+          setVisible(elements.lblInteract, true);
+          setVisible(elements.indObject, true); // ball icon
+          break;
+
+        case "glide":
+          stateHint.textContent =
+            "Gliding state: paraglider deployed. Player can cut/redeploy glide.";
+          notesText.textContent =
+            "• Jump is replaced by a Glide toggle button.\n" +
+            "• Core HUD (minimap, currencies, mic, emoji) stays unchanged.";
+          // hide jump, show glide
+          setVisible(elements.jump, false);
+          setVisible(elements.lblJump, false);
+          setVisible(elements.glide, true);
+          setVisible(elements.lblGlide, true);
+          setVisible(elements.indGlide, true);
+          break;
+
+        case "drive":
+          stateHint.textContent =
+            "Driving state: player is inside a car with dedicated controls.";
+          notesText.textContent =
+            "• Jump is replaced by Brake + Accelerate buttons.\n" +
+            "• Joystick is reused for steering the vehicle.";
+          // hide jump, show brake+accel
+          setVisible(elements.jump, false);
+          setVisible(elements.lblJump, false);
+          setVisible(elements.brake, true);
+          setVisible(elements.lblBrake, true);
+          setVisible(elements.accel, true);
+          setVisible(elements.lblAccel, true);
+          setVisible(elements.indDrive, true);
+          break;
+      }
+    }
+
+    statePills.forEach(pill => {
+      pill.addEventListener("click", () => {
+        const state = pill.getAttribute("data-state");
+        if (!state || state === currentState) return;
+        currentState = state;
+
+        statePills.forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+
+        renderState();
+      });
+    });
+
+    renderState();
+  </script>
+</body>
+</html>
