@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aurora Design Tools</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f172a;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 20px 20px;
+    }
+
+    header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0;
+      color: #f8fafc;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      margin-top: 8px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      padding: 30px 40px 60px;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .tool-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 24px;
+      text-decoration: none;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .tool-card:hover {
+      background: #2a364b;
+      border-color: #475569;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    }
+
+    .tool-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+      color: #f8fafc;
+    }
+
+    .tool-desc {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Aurora Design Tools</h1>
+    <p>Interactive game design visualizers for developers, designers and artists.</p>
+  </header>
+
+  <div class="container">
+
+    <!-- Debate Room Tool -->
+    <a class="tool-card" href="debate-room.html">
+      <h2 class="tool-title">Debate Room Simulator</h2>
+      <p class="tool-desc">
+        Visualize the full debate room flow — audience voting spam, speaker zone locking,
+        role switching, full-room states and interaction logic.
+      </p>
+    </a>
+
+    <!-- Quiz Room Tool -->
+    <a class="tool-card" href="quiz-room.html">
+      <h2 class="tool-title">Quiz Room Simulator</h2>
+      <p class="tool-desc">
+        Endless quiz loop with player answer selection, timer pacing, spam animations,
+        reward feedback, and NPC-room simulation.
+      </p>
+    </a>
+
+    <!-- Placeholder for Future Tools -->
+    <a class="tool-card" href="#" onclick="alert('Coming soon!'); return false;">
+      <h2 class="tool-title">More Tools Coming Soon</h2>
+      <p class="tool-desc">
+        Movement sandbox, car controls, level layout generators, heatmap visualizers,
+        and more are planned.
+      </p>
+    </a>
+
+  </div>
+
+  <footer>© 2025 Aurora · Internal Design Tools</footer>
+
+</body>
+</html>
