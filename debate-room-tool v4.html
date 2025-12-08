@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Debate Room – Interaction Simulator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #020617;
+      color: #e5e7eb;
+      display: flex;
+      height: 100vh;
+    }
+
+    .app {
+      display: flex;
+      flex: 1;
+    }
+
+    .sidebar {
+      width: 300px;
+      padding: 16px 18px;
+      background: #020617;
+      border-right: 1px solid #1f2937;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .sidebar small {
+      color: #9ca3af;
+    }
+
+    .section {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #020617;
+      border: 1px solid #1f2937;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .section h2 {
+      font-size: 13px;
+      margin: 0 0 4px;
+      color: #e5e7eb;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    .coins-chip {
+      margin-top: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #0f172a;
+      border: 1px solid #1f2937;
+      font-size: 11px;
+    }
+
+    .coins-chip span.icon {
+      font-size: 13px;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      position: relative;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+    }
+
+    canvas {
+      display: block;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 55%, #000 100%);
+    }
+
+    /* Mute Banner */
+    .mute-banner {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(55,65,81,0.9);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .mute-banner span.icon {
+      font-size: 13px;
+    }
+
+    .mute-banner span.state-live {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    .mute-banner span.state-muted {
+      color: #f97373;
+      font-weight: 600;
+    }
+
+    /* Stage Exit Button */
+    .stage-exit-btn {
+      position: absolute;
+      top: 10px;
+      right: 16px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #f97373;
+      background: rgba(15,23,42,0.96);
+      color: #fecaca;
+      font-size: 11px;
+      cursor: pointer;
+      display: none;
+    }
+
+    .stage-exit-btn:hover {
+      background: #7f1d1d;
+    }
+
+    /* Audience Voting Popup */
+    .vote-popup {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 220px;
+      background: rgba(15,23,42,0.97);
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.85);
+      padding: 10px 10px 8px;
+      display: none;
+    }
+
+    .vote-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .vote-popup-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .vote-popup-sub {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .close-btn {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+    }
+
+    .vote-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .vote-btn {
+      flex: 1;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-weight: 500;
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.1s ease;
+    }
+
+    .vote-btn.up {
+      border-color: #22c55e;
+    }
+
+    .vote-btn.down {
+      border-color: #f97316;
+    }
+
+    .vote-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 1px rgba(148,163,184,0.4);
+    }
+
+    .vote-popup-footer {
+      margin-top: 6px;
+      font-size: 10px;
+      color: #6b7280;
+      text-align: right;
+    }
+
+    /* Center Modal for interactions */
+    .center-modal {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15,23,42,0.65);
+    }
+
+    .center-modal-content {
+      width: 260px;
+      padding: 12px 14px 10px;
+      border-radius: 14px;
+      background: #020617;
+      border: 1px solid #1f2937;
+      box-shadow: 0 22px 50px rgba(15,23,42,0.85);
+    }
+
+    .center-modal-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .center-modal-desc {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+
+    .center-modal-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .center-btn {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      background: #0b1120;
+      color: #e5e7eb;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .center-btn.primary {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    .center-btn.primary.danger {
+      background: #b91c1c;
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar">
+      <div>
+        <h1>Debate Room – Flow Sandbox</h1>
+        <small>
+          Move the dot and feel the debate room logic without opening the engine.
+        </small>
+      </div>
+
+      <div class="section">
+        <h2>Mode & Coins</h2>
+        <div class="mode-toggle">
+          <button id="modeEmptyBtn" class="mode-btn active">Empty Room</button>
+          <button id="modeFullBtn" class="mode-btn">Full Room</button>
+        </div>
+        <div class="coins-chip">
+          <span class="icon">🪙</span>
+          <span>Coins: <strong id="coinsValue">200</strong></span>
+        </div>
+        <div class="hint">
+          In <strong>Full Room</strong>, removing a guest from stage costs <strong>50 coins</strong>.
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Controls</h2>
+        <div class="hint">
+          <strong>WASD</strong> – Move<br/>
+          <strong>SPACE</strong> – Confirm modal (Take mic / Remove guest)<br/>
+          <strong>Click 👍 / 👎</strong> – Spam votes<br/>
+          <strong>Close</strong> – Dismiss voting popup (reappears after 5s)
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>States</h2>
+        <div class="hint">
+          • Free roam on the right → walk into audience to start voting<br/>
+          • In audience zone → voting popup, <strong>muted</strong><br/>
+          • On stage → speaker, <strong>live</strong><br/>
+          • Full Room: 2 NPC speakers + NPC audience auto-voting, stage can be “full”.
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="canvas-wrapper">
+        <canvas id="debateCanvas" width="960" height="540"></canvas>
+
+        <!-- Mute banner -->
+        <div id="muteBanner" class="mute-banner">
+          <span class="icon" id="muteIcon">🔇</span>
+          <span id="muteState" class="state-muted">Muted (Audience)</span>
+        </div>
+
+        <!-- Stage exit button -->
+        <button id="stageExitBtn" class="stage-exit-btn">Leave Stage</button>
+
+        <!-- Voting popup -->
+        <div id="votePopup" class="vote-popup">
+          <div class="vote-popup-header">
+            <div class="vote-popup-title">React to Speaker</div>
+            <button id="voteClose" class="close-btn" title="Close">✕</button>
+          </div>
+          <div class="vote-popup-sub">
+            Spam reactions while you’re in the audience zone.
+          </div>
+          <div class="vote-buttons">
+            <button class="vote-btn up" id="voteUp">
+              👍 <span>Thumbs Up</span>
+            </button>
+            <button class="vote-btn down" id="voteDown">
+              👎 <span>Thumbs Down</span>
+            </button>
+          </div>
+          <div class="vote-popup-footer">
+            First appears instantly, then every 5s while you stay.
+          </div>
+        </div>
+
+        <!-- Center interaction modal -->
+        <div id="centerModal" class="center-modal">
+          <div class="center-modal-content">
+            <div id="centerModalTitle" class="center-modal-title">Take the mic?</div>
+            <div id="centerModalDesc" class="center-modal-desc">
+              Move onto the stage and become a speaker.
+            </div>
+            <div class="center-modal-buttons">
+              <button id="centerSecondary" class="center-btn">Cancel</button>
+              <button id="centerPrimary" class="center-btn primary">Take mic</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("debateCanvas");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // UI
+    const muteIcon = document.getElementById("muteIcon");
+    const muteState = document.getElementById("muteState");
+    const stageExitBtn = document.getElementById("stageExitBtn");
+    const votePopup = document.getElementById("votePopup");
+    const voteUpBtn = document.getElementById("voteUp");
+    const voteDownBtn = document.getElementById("voteDown");
+    const voteCloseBtn = document.getElementById("voteClose");
+    const centerModal = document.getElementById("centerModal");
+    const centerModalTitle = document.getElementById("centerModalTitle");
+    const centerModalDesc = document.getElementById("centerModalDesc");
+    const centerPrimary = document.getElementById("centerPrimary");
+    const centerSecondary = document.getElementById("centerSecondary");
+    const modeEmptyBtn = document.getElementById("modeEmptyBtn");
+    const modeFullBtn = document.getElementById("modeFullBtn");
+    const coinsValue = document.getElementById("coinsValue");
+
+    // Layout
+    const roomRect = {
+      x: 30.5,
+      y: 40.5,
+      width: W - 60,
+      height: H - 80
+    };
+
+    const stageZone = {
+      x: 40,
+      y: 100,
+      width: 220,
+      height: 260
+    };
+
+    // Audience zone: centered vertically, free corridor on the right
+    const freeCorridorWidth = 120;
+    const audienceZone = {
+      x: stageZone.x + stageZone.width + 40,
+      y: roomRect.y + 40,
+      width: roomRect.width - (stageZone.x + stageZone.width + 40) - freeCorridorWidth - 20,
+      height: roomRect.height - 80
+    };
+
+    const stageCenter = {
+      x: stageZone.x + stageZone.width * 0.5,
+      y: stageZone.y + stageZone.height * 0.55
+    };
+
+    // Player (spawns in free corridor)
+    const player = {
+      x: audienceZone.x + audienceZone.width + 40,
+      y: audienceZone.y + audienceZone.height * 0.6,
+      radius: 9,
+      speed: 3.2,
+      onStage: false
+    };
+
+    // Last safe position inside audience zone (for Cancel)
+    let lastSafeAudiencePos = { x: player.x, y: player.y };
+
+    const keys = { w: false, a: false, s: false, d: false };
+
+    // Vote popup
+    let votePopupOpen = false;
+    let lastPopupClosedAt = 0; // 0 → allow instant first popup
+    const POPUP_COOLDOWN_MS = 5000;
+    let wasInAudience = false;
+
+    // Center modal
+    let modalOpen = false;
+    let modalType = null; // "stage-take" | "stage-full"
+
+    // Modes & coins
+    let mode = "empty"; // "empty" | "full"
+    let coins = 200;
+
+    // NPCs & votes
+    const stageNPCs = [];
+    const audienceNPCs = [];
+    const votes = [];
+
+    function rectContainsPoint(rect, x, y) {
+      return x >= rect.x && x <= rect.x + rect.width &&
+             y >= rect.y && y <= rect.y + rect.height;
+    }
+
+    // Keyboard
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "w" || e.key === "W") keys.w = true;
+      if (e.key === "a" || e.key === "A") keys.a = true;
+      if (e.key === "s" || e.key === "S") keys.s = true;
+      if (e.key === "d" || e.key === "D") keys.d = true;
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleSpaceAction();
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.key === "w" || e.key === "W") keys.w = false;
+      if (e.key === "a" || e.key === "A") keys.a = false;
+      if (e.key === "s" || e.key === "S") keys.s = false;
+      if (e.key === "d" || e.key === "D") keys.d = false;
+    });
+
+    function handleSpaceAction() {
+      if (modalOpen) handleModalPrimary();
+    }
+
+    // Mode switching
+    function setMode(newMode) {
+      mode = newMode;
+      if (mode === "empty") {
+        modeEmptyBtn.classList.add("active");
+        modeFullBtn.classList.remove("active");
+        stageNPCs.length = 0;
+        audienceNPCs.length = 0;
+      } else {
+        modeFullBtn.classList.add("active");
+        modeEmptyBtn.classList.remove("active");
+        setupFullRoomNPCs();
+      }
+      // Reset player: free corridor, not on stage
+      player.onStage = false;
+      player.x = audienceZone.x + audienceZone.width + 40;
+      player.y = audienceZone.y + audienceZone.height * 0.6;
+      lastSafeAudiencePos = { x: player.x, y: player.y };
+
+      closeModal();
+      hideVotePopup();
+      updateMuteState();
+    }
+
+    function setupFullRoomNPCs() {
+      stageNPCs.length = 0;
+      audienceNPCs.length = 0;
+
+      // Two NPC speakers on stage
+      stageNPCs.push({
+        x: stageCenter.x - 30,
+        y: stageCenter.y,
+        radius: 9,
+        phase: Math.random() * Math.PI * 2
+      });
+      stageNPCs.push({
+        x: stageCenter.x + 30,
+        y: stageCenter.y,
+        radius: 9,
+        phase: Math.random() * Math.PI * 2
+      });
+
+      // 3–4 NPC audience dots
+      const count = 3 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < count; i++) {
+        audienceNPCs.push({
+          x: audienceZone.x + 40 + Math.random() * (audienceZone.width - 80),
+          y: audienceZone.y + 40 + Math.random() * (audienceZone.height - 80),
+          radius: 7,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // Coins UI
+    function updateCoinsUI() {
+      coinsValue.textContent = coins;
+    }
+
+    // Votes
+    function spawnVoteFrom(x, y, emoji) {
+      const startX = x + (Math.random() * 16 - 8);
+      const startY = y + (Math.random() * 16 - 8);
+      const targetX = stageZone.x + stageZone.width * 0.5 + (Math.random() * 60 - 30);
+      const targetY = stageZone.y + 30 + (Math.random() * 50 - 25);
+
+      votes.push({
+        x: startX,
+        y: startY,
+        emoji,
+        life: 0,
+        maxLife: 60 + Math.random() * 20,
+        tx: targetX,
+        ty: targetY,
+        renderX: startX,
+        renderY: startY
+      });
+    }
+
+    // Vote popup
+    function showVotePopup() {
+      if (!votePopupOpen) {
+        votePopupOpen = true;
+        votePopup.style.display = "block";
+      }
+    }
+
+    function hideVotePopup() {
+      if (votePopupOpen) {
+        votePopupOpen = false;
+        votePopup.style.display = "none";
+        lastPopupClosedAt = performance.now();
+      }
+    }
+
+    voteUpBtn.addEventListener("click", () => {
+      if (!votePopupOpen) return;
+      spawnVoteFrom(player.x, player.y, "👍");
+    });
+
+    voteDownBtn.addEventListener("click", () => {
+      if (!votePopupOpen) return;
+      spawnVoteFrom(player.x, player.y, "👎");
+    });
+
+    voteCloseBtn.addEventListener("click", hideVotePopup);
+
+    // Center modal
+    function openModal(type) {
+      modalType = type;
+      modalOpen = true;
+      centerModal.style.display = "flex";
+
+      if (type === "stage-take") {
+        centerModalTitle.textContent = "Take the mic?";
+        centerModalDesc.textContent = "Move onto the stage and become a speaker.";
+        centerPrimary.textContent = "Take mic";
+        centerPrimary.classList.remove("danger");
+      } else if (type === "stage-full") {
+        centerModalTitle.textContent = "Stage is full";
+        centerModalDesc.textContent = "Remove one guest from the stage for 50 coins.";
+        centerPrimary.textContent = "Remove guest (50)";
+        centerPrimary.classList.add("danger");
+      }
+    }
+
+    function closeModal() {
+      modalOpen = false;
+      modalType = null;
+      centerModal.style.display = "none";
+    }
+
+    function handleModalPrimary() {
+      if (!modalOpen) return;
+
+      if (modalType === "stage-take") {
+        player.onStage = true;
+        player.x = stageCenter.x;
+        player.y = stageCenter.y;
+      } else if (modalType === "stage-full") {
+        if (coins >= 50 && stageNPCs.length > 0) {
+          coins -= 50;
+          updateCoinsUI();
+          const removed = stageNPCs.pop();
+          player.onStage = true;
+          player.x = removed ? removed.x : stageCenter.x;
+          player.y = removed ? removed.y : stageCenter.y;
+        }
+      }
+      closeModal();
+      updateMuteState();
+    }
+
+    function handleModalCancel() {
+      if (modalType === "stage-take" || modalType === "stage-full") {
+        // Snap back to last safe audience location
+        player.onStage = false;
+        player.x = lastSafeAudiencePos.x;
+        player.y = lastSafeAudiencePos.y;
+        updateMuteState();
+      }
+      closeModal();
+    }
+
+    centerPrimary.addEventListener("click", handleModalPrimary);
+    centerSecondary.addEventListener("click", handleModalCancel);
+
+    // Mode buttons
+    modeEmptyBtn.addEventListener("click", () => setMode("empty"));
+    modeFullBtn.addEventListener("click", () => setMode("full"));
+
+    // Stage exit: snap straight back to audience, no popup
+    stageExitBtn.addEventListener("click", () => {
+      if (player.onStage) {
+        player.onStage = false;
+        player.x = audienceZone.x + audienceZone.width * 0.7;
+        player.y = stageCenter.y;
+        updateMuteState();
+      }
+    });
+
+    // Mute state
+    function updateMuteState() {
+      const inAudience = rectContainsPoint(audienceZone, player.x, player.y);
+      if (player.onStage) {
+        muteIcon.textContent = "🎤";
+        muteState.textContent = "Live (Stage)";
+        muteState.classList.remove("state-muted");
+        muteState.classList.add("state-live");
+      } else if (inAudience) {
+        muteIcon.textContent = "🔇";
+        muteState.textContent = "Muted (Audience)";
+        muteState.classList.remove("state-live");
+        muteState.classList.add("state-muted");
+      } else {
+        muteIcon.textContent = "🎧";
+        muteState.textContent = "Free Roam";
+        muteState.classList.remove("state-muted");
+        muteState.classList.remove("state-live");
+      }
+    }
+
+    // Player movement
+    function updatePlayer() {
+      if (modalOpen) return;
+
+      if (player.onStage) {
+        let vx = 0, vy = 0;
+        if (keys.w) vy -= 1;
+        if (keys.s) vy += 1;
+        if (keys.a) vx -= 1;
+        if (keys.d) vx += 1;
+        const len = Math.hypot(vx, vy) || 1;
+        vx /= len; vy /= len;
+
+        player.x += vx * player.speed * 0.7;
+        player.y += vy * player.speed * 0.7;
+
+        const margin = 10;
+        player.x = Math.max(stageZone.x + margin, Math.min(stageZone.x + stageZone.width - margin, player.x));
+        player.y = Math.max(stageZone.y + margin, Math.min(stageZone.y + stageZone.height - margin, player.y));
+      } else {
+        let vx = 0, vy = 0;
+        if (keys.w) vy -= 1;
+        if (keys.s) vy += 1;
+        if (keys.a) vx -= 1;
+        if (keys.d) vx += 1;
+        const len = Math.hypot(vx, vy) || 1;
+        vx /= len; vy /= len;
+
+        player.x += vx * player.speed;
+        player.y += vy * player.speed;
+
+        const margin = 20;
+        player.x = Math.max(roomRect.x + margin, Math.min(roomRect.x + roomRect.width - margin, player.x));
+        player.y = Math.max(roomRect.y + margin, Math.min(roomRect.y + roomRect.height - margin, player.y));
+
+        // Track last safe audience position
+        const inAudienceNow = rectContainsPoint(audienceZone, player.x, player.y);
+        const inStageNow = rectContainsPoint(stageZone, player.x, player.y);
+        if (inAudienceNow && !inStageNow) {
+          lastSafeAudiencePos.x = player.x;
+          lastSafeAudiencePos.y = player.y;
+        }
+      }
+    }
+
+    // Votes update
+    function updateVotes() {
+      for (let i = votes.length - 1; i >= 0; i--) {
+        const v = votes[i];
+        v.life += 1;
+        const t = Math.min(1, v.life / v.maxLife);
+        const ease = t * t * (3 - 2 * t);
+
+        v.renderX = v.x + (v.tx - v.x) * ease;
+        v.renderY = v.y + (v.ty - v.y) * ease - t * 40;
+
+        if (v.life >= v.maxLife) {
+          votes.splice(i, 1);
+        }
+      }
+    }
+
+    // NPC behavior
+    function updateNPCs() {
+      for (const npc of stageNPCs) {
+        npc.phase += 0.02;
+        npc.bob = Math.sin(npc.phase) * 2;
+      }
+
+      for (const npc of audienceNPCs) {
+        npc.phase += 0.02;
+        npc.bobX = Math.sin(npc.phase) * 1.5;
+        npc.bobY = Math.cos(npc.phase * 0.9) * 1.5;
+
+        if (Math.random() < 0.01) {
+          const emoji = Math.random() < 0.7 ? "👍" : "👎";
+          spawnVoteFrom(npc.x, npc.y, emoji);
+        }
+      }
+    }
+
+    // UI states
+    function updateUIStates() {
+      const now = performance.now();
+      const inAudience = rectContainsPoint(audienceZone, player.x, player.y);
+
+      // Detect audience re-entry (from free roam or stage)
+      if (inAudience && !wasInAudience) {
+        lastPopupClosedAt = 0; // allow instant popup again
+      }
+
+      // Stage exit button
+      stageExitBtn.style.display = player.onStage ? "block" : "none";
+
+      // Voting popup: first time instant, then 5s cooldown while staying
+      if (!player.onStage && !modalOpen && inAudience) {
+        const canOpenInstant = lastPopupClosedAt === 0;
+        const canOpenCooldown = now - lastPopupClosedAt > POPUP_COOLDOWN_MS;
+        if (!votePopupOpen && (canOpenInstant || canOpenCooldown)) {
+          showVotePopup();
+        }
+      } else {
+        if (votePopupOpen) hideVotePopup();
+      }
+
+      // Stage interaction: trigger on actual stage zone
+      if (!player.onStage && !modalOpen && rectContainsPoint(stageZone, player.x, player.y)) {
+        if (mode === "full" && stageNPCs.length >= 2) {
+          openModal("stage-full");
+        } else {
+          openModal("stage-take");
+        }
+      }
+
+      updateMuteState();
+      wasInAudience = inAudience;
+    }
+
+    // Drawing
+    function drawRoom() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, W, H);
+
+      // Outer room
+      ctx.strokeStyle = "#1f2937";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(roomRect.x, roomRect.y, roomRect.width, roomRect.height);
+
+      // Stage
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(stageZone.x, stageZone.y, stageZone.width, stageZone.height);
+      ctx.strokeStyle = "#f97316";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(stageZone.x + 0.5, stageZone.y + 0.5, stageZone.width, stageZone.height);
+
+      ctx.fillStyle = "#fecaca";
+      ctx.font = "13px system-ui";
+      ctx.fillText("STAGE ZONE (2 speakers max)", stageZone.x + 12, stageZone.y + 18);
+
+      ctx.font = "26px system-ui";
+      ctx.fillText("🎙️", stageCenter.x - 13, stageCenter.y + 9);
+
+      // Audience
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(audienceZone.x, audienceZone.y, audienceZone.width, audienceZone.height);
+      ctx.strokeStyle = "#22c55e";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(audienceZone.x + 0.5, audienceZone.y + 0.5, audienceZone.width, audienceZone.height);
+
+      ctx.fillStyle = "#bbf7d0";
+      ctx.font = "13px system-ui";
+      ctx.fillText("AUDIENCE ZONE (vote & move freely)", audienceZone.x + 12, audienceZone.y + 18);
+    }
+
+    function drawNPCs() {
+      // Stage NPCs
+      for (const npc of stageNPCs) {
+        const y = npc.y + (npc.bob || 0);
+
+        // glow
+        ctx.beginPath();
+        ctx.arc(npc.x, y, npc.radius + 4, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(248,250,252,0.12)";
+        ctx.fill();
+
+        // body
+        ctx.beginPath();
+        ctx.arc(npc.x, y, npc.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#f97316";
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#0b1120";
+        ctx.stroke();
+
+        // chat bubble
+        ctx.font = "14px system-ui";
+        const offsetY = -npc.radius - 8 - Math.sin(npc.phase * 1.3) * 3;
+        ctx.fillText("💬", npc.x - 7, y + offsetY);
+      }
+
+      // Audience NPCs
+      for (const npc of audienceNPCs) {
+        const x = npc.x + (npc.bobX || 0);
+        const y = npc.y + (npc.bobY || 0);
+
+        ctx.beginPath();
+        ctx.arc(x, y, npc.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#22c55e";
+        ctx.fill();
+
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#020617";
+        ctx.stroke();
+      }
+    }
+
+    function drawVotes() {
+      ctx.font = "18px system-ui";
+      for (const v of votes) {
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = "#f9fafb"; // solid, visible in all modes
+        ctx.fillText(v.emoji, v.renderX, v.renderY);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPlayer() {
+      // glow
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI * 2);
+      ctx.fillStyle = player.onStage
+        ? "rgba(250,204,21,0.20)"
+        : "rgba(59,130,246,0.18)";
+      ctx.fill();
+
+      // body
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.onStage ? "#facc15" : "#60a5fa";
+      ctx.fill();
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#0b1120";
+      ctx.stroke();
+
+      // label
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "10px system-ui";
+      const label = player.onStage ? "You (Speaker)" : "You";
+      ctx.fillText(label, player.x - 22, player.y - 16);
+    }
+
+    function loop() {
+      updatePlayer();
+      updateVotes();
+      updateNPCs();
+      updateUIStates();
+
+      drawRoom();
+      drawNPCs();
+      drawVotes();
+      drawPlayer();
+
+      requestAnimationFrame(loop);
+    }
+
+    function init() {
+      updateCoinsUI();
+      updateMuteState();
+      requestAnimationFrame(loop);
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quiz Room – Interaction Simulator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #020617;
+      color: #e5e7eb;
+      display: flex;
+      height: 100vh;
+    }
+
+    .app {
+      display: flex;
+      flex: 1;
+    }
+
+    .sidebar {
+      width: 300px;
+      padding: 16px 18px;
+      background: #020617;
+      border-right: 1px solid #1f2937;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .sidebar small {
+      color: #9ca3af;
+    }
+
+    .section {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #020617;
+      border: 1px solid #1f2937;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .section h2 {
+      font-size: 13px;
+      margin: 0 0 4px;
+      color: #e5e7eb;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .mode-toggle {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      position: relative;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.8);
+    }
+
+    canvas {
+      display: block;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 55%, #000 100%);
+    }
+
+    /* Info banner */
+    .info-banner {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(55,65,81,0.9);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .info-banner span.icon {
+      font-size: 13px;
+    }
+
+    .info-banner span.state {
+      color: #e5e7eb;
+      font-weight: 500;
+    }
+
+    /* Answer popup */
+    .answer-popup {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 280px;
+      background: rgba(15,23,42,0.97);
+      border-radius: 14px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.85);
+      padding: 10px 10px 8px;
+      display: none;
+    }
+
+    .answer-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .answer-popup-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .answer-popup-sub {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .close-btn {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+    }
+
+    .answer-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .answer-btn {
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-weight: 700;
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #4b5563;
+      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.1s ease, border-color 0.1s ease;
+    }
+
+    .answer-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 1px rgba(148,163,184,0.5);
+    }
+
+    .answer-btn.selected {
+      background: #22c55e;
+      border-color: #22c55e;
+      color: #022c22;
+      box-shadow: 0 0 0 1px rgba(22,163,74,0.7);
+    }
+
+    .answer-popup-footer {
+      margin-top: 6px;
+      font-size: 10px;
+      color: #6b7280;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar">
+      <div>
+        <h1>Quiz Room – Flow Sandbox</h1>
+        <small>
+          Top-down simulator for the endless quiz zone loop.
+        </small>
+      </div>
+
+      <div class="section">
+        <h2>Mode</h2>
+        <div class="mode-toggle">
+          <button id="modeEmptyBtn" class="mode-btn active">Empty Room</button>
+          <button id="modeFullBtn" class="mode-btn">Full Room</button>
+        </div>
+        <div class="hint">
+          <strong>Empty Room:</strong> Only you.<br/>
+          <strong>Full Room:</strong> NPC players in the quiz zone spamming answers.
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Controls</h2>
+        <div class="hint">
+          <strong>WASD</strong> – Move<br/>
+          <strong>Click A/B/C/D</strong> – Answer / spam votes<br/>
+          <strong>Close</strong> – Hide answer popup (reappears next time you enter)
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>States</h2>
+        <div class="hint">
+          • Free roam on the far right<br/>
+          • Enter <strong>Quiz Zone</strong> (right block) to answer<br/>
+          • Question screen is on the left side, separate from the zone<br/>
+          • Question → short pause → timer (30s) → next question<br/>
+          • Correct answer gives a little <strong>+1 coin</strong> float over the player.
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="canvas-wrapper">
+        <canvas id="quizCanvas" width="960" height="540"></canvas>
+
+        <!-- Info banner -->
+        <div class="info-banner">
+          <span class="icon">❓</span>
+          <span id="stateLabel" class="state">Free Roam</span>
+        </div>
+
+        <!-- Answer popup -->
+        <div id="answerPopup" class="answer-popup">
+          <div class="answer-popup-header">
+            <div class="answer-popup-title">Choose your answer</div>
+            <button id="answerClose" class="close-btn" title="Close">✕</button>
+          </div>
+          <div class="answer-popup-sub">
+            Tap any option. You can change it until the timer runs out.
+          </div>
+          <div class="answer-buttons">
+            <button class="answer-btn" data-option="A">A</button>
+            <button class="answer-btn" data-option="B">B</button>
+            <button class="answer-btn" data-option="C">C</button>
+            <button class="answer-btn" data-option="D">D</button>
+          </div>
+          <div class="answer-popup-footer">
+            Popup stays until closed. Reappears on zone re-entry.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("quizCanvas");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // UI
+    const stateLabel = document.getElementById("stateLabel");
+    const modeEmptyBtn = document.getElementById("modeEmptyBtn");
+    const modeFullBtn = document.getElementById("modeFullBtn");
+    const answerPopup = document.getElementById("answerPopup");
+    const answerCloseBtn = document.getElementById("answerClose");
+    const answerButtons = document.querySelectorAll(".answer-btn");
+
+    // Layout
+    const roomRect = {
+      x: 30.5,
+      y: 40.5,
+      width: W - 60,
+      height: H - 80
+    };
+
+    const freeCorridorWidth = 120;
+
+    // Screen on the LEFT, inside room
+    const screenRect = {
+      x: roomRect.x + 24,
+      y: roomRect.y + 40,
+      width: roomRect.width * 0.35,
+      height: 190
+    };
+
+    // Quiz zone on the RIGHT
+    const quizZone = {
+      x: screenRect.x + screenRect.width + 40,
+      y: roomRect.y + 40,
+      width:
+        roomRect.width -
+        (screenRect.width + 40 + freeCorridorWidth + (screenRect.x - roomRect.x)) -
+        20,
+      height: roomRect.height - 80
+    };
+
+    const screenCenter = {
+      x: screenRect.x + screenRect.width / 2,
+      y: screenRect.y + screenRect.height / 2
+    };
+
+    // Player starts in free corridor on far right
+    const player = {
+      x: quizZone.x + quizZone.width + 40,
+      y: roomRect.y + roomRect.height / 2,
+      radius: 9,
+      speed: 3.2
+    };
+
+    const keys = { w: false, a: false, s: false, d: false };
+
+    // Answer popup behaviour
+    let answerPopupOpen = false;
+    let lastAnswerPopupClosedAt = 0;
+    const POPUP_COOLDOWN_MS = 5000;
+    let wasInQuizZone = false;
+
+    // Mode & NPCs
+    let mode = "empty"; // "empty" | "full"
+    const npcPlayers = [];
+
+    // Votes (flying labels A/B/C/D)
+    const votes = [];
+
+    // Reward coins (+1) over player
+    const rewards = [];
+
+    // Questions: 30s each, with 1.5s pre-timer delay
+    const QUESTION_DURATION = 30000; // 30 seconds
+    const QUESTION_DELAY = 1500;     // 1.5 seconds breathing space
+
+    const questions = [
+      {
+        text: "What is the official snack of a long grind session?",
+        options: ["A) Samosa", "B) Protein bar", "C) Air", "D) Just chai"],
+        correct: "A"
+      },
+      {
+        text: "Best way to tilt-proof your squad?",
+        options: ["A) Mute chat", "B) More emotes", "C) Snack break", "D) Blame lag"],
+        correct: "D"
+      },
+      {
+        text: "What does 'one last game' actually mean?",
+        options: ["A) 1 game", "B) 3 games", "C) 10 games", "D) Sunrise"],
+        correct: "D"
+      },
+      {
+        text: "Your teammate jumps off the map. What do you do?",
+        options: ["A) Laugh", "B) Revive", "C) Clip it", "D) All of the above"],
+        correct: "D"
+      },
+      {
+        text: "What powers up a designer the most?",
+        options: ["A) Coffee", "B) Positive reviews", "C) Clean Miro board", "D) All combined"],
+        correct: "D"
+      }
+    ];
+
+    let currentQuestionIndex = 0;
+    let questionChangeTime = performance.now();
+    let timerStartTime = questionChangeTime + QUESTION_DELAY;
+
+    // Player's selected option for current question
+    let selectedOption = null;
+
+    function getCurrentQuestion() {
+      return questions[currentQuestionIndex];
+    }
+
+    function rectContainsPoint(rect, x, y) {
+      return x >= rect.x && x <= rect.x + rect.width &&
+             y >= rect.y && y <= rect.y + rect.height;
+    }
+
+    // Keyboard
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "w" || e.key === "W") keys.w = true;
+      if (e.key === "a" || e.key === "A") keys.a = true;
+      if (e.key === "s" || e.key === "S") keys.s = true;
+      if (e.key === "d" || e.key === "D") keys.d = true;
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.key === "w" || e.key === "W") keys.w = false;
+      if (e.key === "a" || e.key === "A") keys.a = false;
+      if (e.key === "s" || e.key === "S") keys.s = false;
+      if (e.key === "d" || e.key === "D") keys.d = false;
+    });
+
+    // Mode switching
+    function setMode(newMode) {
+      mode = newMode;
+      if (mode === "empty") {
+        modeEmptyBtn.classList.add("active");
+        modeFullBtn.classList.remove("active");
+        npcPlayers.length = 0;
+      } else {
+        modeFullBtn.classList.add("active");
+        modeEmptyBtn.classList.remove("active");
+        setupFullRoomNPCs();
+      }
+
+      // Reset player to free corridor
+      player.x = quizZone.x + quizZone.width + 40;
+      player.y = roomRect.y + roomRect.height / 2;
+
+      hideAnswerPopup();
+      wasInQuizZone = false;
+      stateLabel.textContent = "Free Roam";
+    }
+
+    function setupFullRoomNPCs() {
+      npcPlayers.length = 0;
+
+      const count = 4 + Math.floor(Math.random() * 3); // 4–6 NPCs
+      for (let i = 0; i < count; i++) {
+        npcPlayers.push({
+          x: quizZone.x + 40 + Math.random() * (quizZone.width - 120),
+          y: quizZone.y + 60 + Math.random() * (quizZone.height - 140),
+          radius: 7,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // Answer popup
+    function showAnswerPopup() {
+      if (!answerPopupOpen) {
+        answerPopupOpen = true;
+        answerPopup.style.display = "block";
+      }
+    }
+
+    function hideAnswerPopup() {
+      if (answerPopupOpen) {
+        answerPopupOpen = false;
+        answerPopup.style.display = "none";
+        lastAnswerPopupClosedAt = performance.now();
+      }
+    }
+
+    answerCloseBtn.addEventListener("click", hideAnswerPopup);
+
+    function updateAnswerButtonStyles() {
+      answerButtons.forEach(btn => {
+        const opt = btn.getAttribute("data-option");
+        if (opt === selectedOption) {
+          btn.classList.add("selected");
+        } else {
+          btn.classList.remove("selected");
+        }
+      });
+    }
+
+    // Answer buttons: select + spawn vote towards screen
+    answerButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const opt = btn.getAttribute("data-option");
+        selectedOption = opt;
+        updateAnswerButtonStyles();
+        spawnVoteFrom(player.x, player.y, opt);
+      });
+    });
+
+    // Votes
+    function spawnVoteFrom(x, y, label) {
+      const startX = x + (Math.random() * 16 - 8);
+      const startY = y + (Math.random() * 16 - 8);
+      const targetX = screenCenter.x + (Math.random() * 80 - 40);
+      const targetY = screenRect.y + 30 + (Math.random() * 40 - 20);
+
+      votes.push({
+        x: startX,
+        y: startY,
+        label,
+        life: 0,
+        maxLife: 60 + Math.random() * 20,
+        tx: targetX,
+        ty: targetY,
+        renderX: startX,
+        renderY: startY
+      });
+    }
+
+    function updateVotes() {
+      for (let i = votes.length - 1; i >= 0; i--) {
+        const v = votes[i];
+        v.life += 1;
+        const t = Math.min(1, v.life / v.maxLife);
+        const ease = t * t * (3 - 2 * t);
+
+        v.renderX = v.x + (v.tx - v.x) * ease;
+        v.renderY = v.y + (v.ty - v.y) * ease - t * 40;
+
+        if (v.life >= v.maxLife) {
+          votes.splice(i, 1);
+        }
+      }
+    }
+
+    // Reward coins
+    function spawnCoinReward() {
+      rewards.push({
+        x: player.x,
+        y: player.y - 20,
+        life: 0,
+        maxLife: 60
+      });
+    }
+
+    function updateRewards() {
+      for (let i = rewards.length - 1; i >= 0; i--) {
+        const r = rewards[i];
+        r.life += 1;
+        r.y -= 0.5;
+        if (r.life >= r.maxLife) {
+          rewards.splice(i, 1);
+        }
+      }
+    }
+
+    // NPC behaviour
+    function npcAutoVotes() {
+      if (mode !== "full") return;
+      for (const npc of npcPlayers) {
+        npc.phase += 0.02;
+        npc.bobX = Math.sin(npc.phase) * 1.5;
+        npc.bobY = Math.cos(npc.phase * 0.9) * 1.5;
+
+        if (Math.random() < 0.02) {
+          const options = ["A", "B", "C", "D"];
+          const choice = options[Math.floor(Math.random() * options.length)];
+          spawnVoteFrom(npc.x, npc.y, choice);
+        }
+      }
+    }
+
+    // Player movement
+    function updatePlayer() {
+      let vx = 0, vy = 0;
+      if (keys.w) vy -= 1;
+      if (keys.s) vy += 1;
+      if (keys.a) vx -= 1;
+      if (keys.d) vx += 1;
+
+      const len = Math.hypot(vx, vy) || 1;
+      vx /= len; vy /= len;
+
+      player.x += vx * player.speed;
+      player.y += vy * player.speed;
+
+      const margin = 20;
+      player.x = Math.max(roomRect.x + margin, Math.min(roomRect.x + roomRect.width - margin, player.x));
+      player.y = Math.max(roomRect.y + margin, Math.min(roomRect.y + roomRect.height - margin, player.y));
+    }
+
+    // Question timer & rotation
+    function updateQuestionRotation() {
+      const now = performance.now();
+      const elapsedSinceTimerStart = now - timerStartTime;
+
+      if (elapsedSinceTimerStart > QUESTION_DURATION) {
+        // Timer just ended → check correctness once, then advance question
+        const q = getCurrentQuestion();
+        if (selectedOption && selectedOption === q.correct) {
+          spawnCoinReward();
+        }
+
+        currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+        questionChangeTime = now;
+        timerStartTime = questionChangeTime + QUESTION_DELAY;
+        selectedOption = null;
+        updateAnswerButtonStyles();
+      }
+    }
+
+    // UI states (zone logic + popup)
+    function updateUIStates() {
+      const now = performance.now();
+      const inQuizZone = rectContainsPoint(quizZone, player.x, player.y);
+
+      // Detect zone re-entry
+      if (inQuizZone && !wasInQuizZone) {
+        lastAnswerPopupClosedAt = 0; // allow instant popup again
+      }
+
+      // State label
+      stateLabel.textContent = inQuizZone ? "Quiz Zone (Answering)" : "Free Roam";
+
+      // Popup logic
+      if (inQuizZone) {
+        const canOpenInstant = lastAnswerPopupClosedAt === 0;
+        const canOpenCooldown = now - lastAnswerPopupClosedAt > POPUP_COOLDOWN_MS;
+        if (!answerPopupOpen && (canOpenInstant || canOpenCooldown)) {
+          showAnswerPopup();
+        }
+      } else {
+        if (answerPopupOpen) hideAnswerPopup();
+      }
+
+      wasInQuizZone = inQuizZone;
+    }
+
+    // Drawing
+    function drawRoom() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, W, H);
+
+      // Outer room
+      ctx.strokeStyle = "#1f2937";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(roomRect.x, roomRect.y, roomRect.width, roomRect.height);
+
+      // Screen on the left
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(screenRect.x, screenRect.y, screenRect.width, screenRect.height);
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(screenRect.x + 0.5, screenRect.y + 0.5, screenRect.width, screenRect.height);
+
+      const q = getCurrentQuestion();
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "15px system-ui";
+      ctx.fillText("Question:", screenRect.x + 12, screenRect.y + 22);
+      wrapText(ctx, q.text, screenRect.x + 12, screenRect.y + 44, screenRect.width - 24, 18);
+
+      // Options text under question
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = "#cbd5f5";
+      const opts = q.options;
+      let optY = screenRect.y + 96;
+      for (let i = 0; i < opts.length; i++) {
+        ctx.fillText(opts[i], screenRect.x + 16, optY);
+        optY += 20;
+      }
+
+      // Time bar with delay
+      const now = performance.now();
+      const elapsedSinceTimerStart = now - timerStartTime;
+      const barWidthTotal = screenRect.width - 24;
+
+      ctx.fillStyle = "#1f2937";
+      ctx.fillRect(screenRect.x + 12, screenRect.y + screenRect.height - 16, barWidthTotal, 6);
+
+      let ratio;
+      if (elapsedSinceTimerStart < 0) {
+        // Pre-timer breathing space
+        ratio = 1;
+        ctx.fillStyle = "#64748b";
+      } else {
+        const rawRatio = Math.max(0, 1 - elapsedSinceTimerStart / QUESTION_DURATION);
+        ratio = rawRatio;
+        if (rawRatio > 0.4) ctx.fillStyle = "#22c55e";
+        else if (rawRatio > 0.15) ctx.fillStyle = "#facc15";
+        else ctx.fillStyle = "#f97373";
+      }
+
+      const barWidth = barWidthTotal * ratio;
+      ctx.fillRect(screenRect.x + 12, screenRect.y + screenRect.height - 16, barWidth, 6);
+
+      // Quiz Zone on the right
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(quizZone.x, quizZone.y, quizZone.width, quizZone.height);
+      ctx.strokeStyle = "#22c55e";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(quizZone.x + 0.5, quizZone.y + 0.5, quizZone.width, quizZone.height);
+
+      ctx.fillStyle = "#bbf7d0";
+      ctx.font = "13px system-ui";
+      ctx.fillText("QUIZ ZONE (stand here to answer)", quizZone.x + 12, quizZone.y + 18);
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(" ");
+      let line = "";
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          ctx.fillText(line, x, y);
+          line = words[n] + " ";
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, y);
+    }
+
+    function drawNPCs() {
+      for (const npc of npcPlayers) {
+        const x = npc.x + (npc.bobX || 0);
+        const y = npc.y + (npc.bobY || 0);
+
+        ctx.beginPath();
+        ctx.arc(x, y, npc.radius + 3, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(248,250,252,0.10)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, npc.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#22c55e";
+        ctx.fill();
+
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#020617";
+        ctx.stroke();
+      }
+    }
+
+    function drawVotes() {
+      ctx.font = "18px system-ui";
+      for (const v of votes) {
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = "#f9fafb";
+        ctx.fillText(v.label, v.renderX, v.renderY);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawRewards() {
+      ctx.font = "16px system-ui";
+      for (const r of rewards) {
+        const alpha = 1 - r.life / r.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = "#facc15";
+        ctx.fillText("+1 🪙", r.x - 12, r.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPlayer() {
+      // Glow
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI * 2);
+      ctx.fillStyle = rectContainsPoint(quizZone, player.x, player.y)
+        ? "rgba(34,197,94,0.20)"
+        : "rgba(59,130,246,0.18)";
+      ctx.fill();
+
+      // Body
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#60a5fa";
+      ctx.fill();
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#0b1120";
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "10px system-ui";
+      ctx.fillText("You", player.x - 14, player.y - 16);
+    }
+
+    function loop() {
+      updatePlayer();
+      updateVotes();
+      updateRewards();
+      npcAutoVotes();
+      updateQuestionRotation();
+      updateUIStates();
+
+      drawRoom();
+      drawNPCs();
+      drawVotes();
+      drawRewards();
+      drawPlayer();
+
+      requestAnimationFrame(loop);
+    }
+
+    function init() {
+      setMode("empty");
+      updateAnswerButtonStyles();
+      requestAnimationFrame(loop);
+    }
+
+    init();
+  </script>
+</body>
+</html>
