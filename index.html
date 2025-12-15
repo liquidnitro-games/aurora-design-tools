@@ -2,142 +2,488 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Aurora Design Tools</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Aurora – Interactive Design Tools Index</title>
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    :root{
+      --bg:#0b1020;
+      --panel:rgba(12,18,38,0.92);
+      --panel2:rgba(16,24,52,0.92);
+      --line:rgba(255,255,255,0.12);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.68);
+      --accent:rgba(120,167,255,0.90);
+      --accent2:rgba(190,140,255,0.85);
+      --good:rgba(98,247,171,0.95);
+      --shadow: 0 18px 55px rgba(0,0,0,0.45);
     }
 
-    body {
-      margin: 0;
-      padding: 0;
-      background: #0f172a;
-      color: #f1f5f9;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+    html,body{
+      height:100%;
+      margin:0;
+      background:
+        radial-gradient(1050px 560px at 30% 12%, rgba(120,167,255,0.14), transparent 60%),
+        radial-gradient(900px 560px at 70% 86%, rgba(190,140,255,0.12), transparent 60%),
+        var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      overflow:auto;
     }
 
-    header {
-      text-align: center;
-      padding: 40px 20px 20px;
-    }
-
-    header h1 {
-      font-size: 32px;
-      font-weight: 800;
-      margin: 0;
-      color: #f8fafc;
-      letter-spacing: 0.5px;
-    }
-
-    header p {
-      margin-top: 8px;
-      color: #94a3b8;
-      font-size: 14px;
-    }
-
-    .container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 24px;
-      padding: 30px 40px 60px;
-      max-width: 1100px;
+    .wrap{
+      max-width: 1180px;
       margin: 0 auto;
+      padding: 22px 18px 40px;
+      box-sizing:border-box;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:0.02em;
+    }
+    .brand .sub{
+      margin:0;
+      color: var(--muted);
+      font-size:13px;
+      line-height:1.35;
+      max-width: 720px;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.88);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .input{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.20);
+      min-width: 280px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+    }
+    .input input{
+      all: unset;
       width: 100%;
+      font-size:13px;
+      color: rgba(255,255,255,0.92);
+    }
+    .input input::placeholder{ color: rgba(255,255,255,0.45); }
+
+    .seg{
+      display:flex;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.20);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+    }
+    .seg button{
+      all: unset;
+      cursor:pointer;
+      padding:10px 12px;
+      font-size:12px;
+      color: rgba(255,255,255,0.78);
+      border-right:1px solid rgba(255,255,255,0.10);
+      transition: background 120ms ease, color 120ms ease;
+      user-select:none;
+    }
+    .seg button:last-child{ border-right:none; }
+    .seg button.active{
+      background: rgba(120,167,255,0.16);
+      color: rgba(255,255,255,0.92);
+    }
+    .seg button:hover{ background: rgba(255,255,255,0.06); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      margin-top:14px;
     }
 
-    .tool-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 14px;
-      padding: 24px;
-      text-decoration: none;
-      color: #f1f5f9;
-      display: flex;
-      flex-direction: column;
-      transition: all 0.2s ease;
-      cursor: pointer;
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius:18px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height: 190px;
     }
 
-    .tool-card:hover {
-      background: #2a364b;
-      border-color: #475569;
-      transform: translateY(-4px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    .cardTop{
+      padding:14px 14px 10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      background: rgba(0,0,0,0.18);
+      border-bottom:1px solid rgba(255,255,255,0.10);
     }
 
-    .tool-title {
-      font-size: 20px;
-      font-weight: 700;
-      margin: 0 0 6px 0;
-      color: #f8fafc;
+    .titleBlock{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .title{
+      font-size:14px;
+      font-weight:850;
+      letter-spacing:0.02em;
+      margin:0;
+    }
+    .desc{
+      margin:0;
+      font-size:12px;
+      color: rgba(255,255,255,0.70);
+      line-height:1.35;
     }
 
-    .tool-desc {
-      font-size: 14px;
-      color: #94a3b8;
-      line-height: 1.4;
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      font-size:11px;
+      color: rgba(255,255,255,0.82);
+      white-space:nowrap;
+    }
+    .badge.good{ border-color: rgba(98,247,171,0.45); background: rgba(98,247,171,0.10); }
+    .badge.blue{ border-color: rgba(120,167,255,0.50); background: rgba(120,167,255,0.10); }
+    .badge.purple{ border-color: rgba(190,140,255,0.55); background: rgba(190,140,255,0.10); }
+
+    .cardBody{
+      padding:12px 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      flex:1;
     }
 
-    footer {
-      margin-top: auto;
-      padding: 20px;
-      text-align: center;
-      font-size: 12px;
-      color: #64748b;
+    .tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .tag{
+      font-size:11px;
+      padding:5px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.72);
+    }
+
+    .cardFooter{
+      padding:12px 14px 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      border-top:1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.16);
+    }
+
+    a.btn{
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.92);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:0.01em;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+      min-width: 130px;
+    }
+    a.btn:hover{
+      background: rgba(255,255,255,0.11);
+      border-color: rgba(255,255,255,0.26);
+      transform: translateY(-1px);
+    }
+    a.btn.primary{
+      background: rgba(120,167,255,0.16);
+      border-color: rgba(120,167,255,0.55);
+    }
+    a.btn.primary:hover{
+      background: rgba(120,167,255,0.24);
+      border-color: rgba(120,167,255,0.72);
+    }
+
+    .meta{
+      font-size:12px;
+      color: rgba(255,255,255,0.60);
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      text-align:right;
+    }
+
+    .empty{
+      margin-top:18px;
+      padding:16px 14px;
+      border-radius:16px;
+      border:1px dashed rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.20);
+      color: rgba(255,255,255,0.72);
+      display:none;
+    }
+
+    .footerNote{
+      margin-top:14px;
+      color: rgba(255,255,255,0.55);
+      font-size:12px;
+      line-height:1.35;
+    }
+
+    @media (max-width: 1060px){
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+      .input{ min-width: 220px; }
     }
   </style>
 </head>
+
 <body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Aurora – Interactive Design Tools</h1>
+        <p class="sub">
+          A single landing page to open your prototype tools quickly (HTML-only, no external libraries).
+          Edit tool links in the <strong>TOOLS</strong> array in this file.
+        </p>
+      </div>
 
-  <header>
-    <h1>Aurora Design Tools</h1>
-    <p>Interactive game design visualizers for developers, designers and artists.</p>
-  </header>
+      <div class="controls">
+        <div class="input" title="Search by name, tags, or description">
+          <span style="opacity:.7">🔎</span>
+          <input id="search" placeholder="Search tools (e.g., showroom, quiz, glide)..." autocomplete="off" />
+        </div>
 
-  <div class="container">
+        <div class="seg" role="tablist" aria-label="Tool filter">
+          <button class="active" data-filter="all" role="tab">All</button>
+          <button data-filter="aurora" role="tab">Aurora</button>
+          <button data-filter="squid" role="tab">Squid</button>
+          <button data-filter="utils" role="tab">Utils</button>
+        </div>
 
-    <!-- Debate Room Tool -->
-    <a class="tool-card" href="debate-room.html">
-      <h2 class="tool-title">Debate Room Simulator</h2>
-      <p class="tool-desc">
-        Visualize the full debate room flow — audience voting spam, stage entry logic,
-        role switching, and full-room behaviour.
-      </p>
-    </a>
+        <div class="pill" id="countPill">0 tools</div>
+      </div>
+    </div>
 
-    <!-- Quiz Room Tool -->
-    <a class="tool-card" href="quiz-room.html">
-      <h2 class="tool-title">Quiz Room Simulator</h2>
-      <p class="tool-desc">
-        Endless quiz loop with question pacing, answer selection, reward feedback (+1 coin),
-        and NPC “full room” behaviour.
-      </p>
-    </a>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty">No tools match your search/filter.</div>
 
-    <!-- UI State Visualizer -->
-    <a class="tool-card" href="ui-state-visualizer.html">
-      <h2 class="tool-title">UI State Visualizer</h2>
-      <p class="tool-desc">
-        Shows HUD layouts for General, Object Interaction, Gliding and Driving states —
-        which buttons appear, move, or swap in each state for UI/UX and dev alignment.
-      </p>
-    </a>
-
-    <!-- Placeholder for Future Tools -->
-    <a class="tool-card" href="#" onclick="alert('Coming soon!'); return false;">
-      <h2 class="tool-title">More Tools Coming Soon</h2>
-      <p class="tool-desc">
-        Movement sandbox, car controls, level layout generators, heatmap visualizers,
-        and more are planned.
-      </p>
-    </a>
-
+    <div class="footerNote">
+      Tip: keep all tool files in the same folder as this index, and update each tool’s <strong>file</strong> value below.
+      Example: <span style="color:rgba(255,255,255,0.8)">car-showroom-rent.html</span>
+    </div>
   </div>
 
-  <footer>© 2025 Aurora · Internal Design Tools</footer>
+<script>
+/* ==========================================================
+  EDIT THIS LIST:
+  - file: relative path to the tool HTML
+  - group: "aurora" | "squid" | "utils"
+  - status: "ready" | "wip"
+========================================================== */
 
+const TOOLS = [
+  {
+    id: "aurora_car_showroom_rent",
+    name: "Car Showroom – Rent Flow",
+    group: "aurora",
+    status: "ready",
+    file: "car-showroom-rent.html",
+    desc: "Top-down hub prototype: auto-open showroom UI on zone entry, rent car (20s test), drive/exit/enter, NPCs, toasts, HUD.",
+    tags: ["showroom", "rent", "cars", "economy", "npc", "timer", "aurora"]
+  },
+
+  // Add your other existing tools here (update file names to match your folder):
+  {
+    id: "aurora_quiz_room_yaml",
+    name: "Quiz Room – YAML Script Helper",
+    group: "aurora",
+    status: "wip",
+    file: "quiz-yaml-tool.html",
+    desc: "Paste questions and auto-generate Unity YAML QuizData format (inspector-friendly).",
+    tags: ["quiz", "yaml", "unity", "content", "aurora"]
+  },
+  {
+    id: "aurora_glide_tuning",
+    name: "Glide Tuning – Preset Notes",
+    group: "aurora",
+    status: "wip",
+    file: "glide-tuning-tool.html",
+    desc: "Quick preset/value viewer for glide parameters (shareable to devs).",
+    tags: ["glide", "movement", "tuning", "aurora"]
+  },
+  {
+    id: "utils_design_hub_notes",
+    name: "Design Hub – Notes / Library Page",
+    group: "utils",
+    status: "wip",
+    file: "design-hub-notes.html",
+    desc: "A simple page template to host write-ups, tables, and prototypes as a portfolio-style hub.",
+    tags: ["docs", "library", "notes", "utils"]
+  },
+
+  // Example Squid entry (rename/remove if not needed)
+  {
+    id: "squid_minigame_gdd_template",
+    name: "Mini-game GDD Template",
+    group: "squid",
+    status: "wip",
+    file: "minigame-gdd-template.html",
+    desc: "Reusable GDD skeleton page for internal design specs (sections + copy blocks).",
+    tags: ["gdd", "template", "squid"]
+  }
+];
+
+/* ==========================================================
+  UI Rendering
+========================================================== */
+
+const gridEl = document.getElementById("grid");
+const emptyEl = document.getElementById("empty");
+const searchEl = document.getElementById("search");
+const countPill = document.getElementById("countPill");
+const filterButtons = Array.from(document.querySelectorAll(".seg button"));
+
+let activeFilter = "all";
+
+function badgeFor(tool){
+  if(tool.status === "ready") return { text: "READY", cls: "good" };
+  return { text: "WIP", cls: tool.group === "aurora" ? "blue" : (tool.group === "squid" ? "purple" : "") };
+}
+
+function groupLabel(g){
+  if(g === "aurora") return "AURORA";
+  if(g === "squid") return "SQUID";
+  return "UTILS";
+}
+
+function sanitize(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function matches(tool, query){
+  if(!query) return true;
+  const q = query.toLowerCase();
+  const hay = [
+    tool.name,
+    tool.desc,
+    tool.group,
+    tool.status,
+    ...(tool.tags || [])
+  ].join(" ").toLowerCase();
+  return hay.includes(q);
+}
+
+function applyFilter(list){
+  if(activeFilter === "all") return list;
+  return list.filter(t => t.group === activeFilter);
+}
+
+function render(){
+  const query = searchEl.value.trim();
+  let list = TOOLS.slice();
+  list = applyFilter(list);
+  list = list.filter(t => matches(t, query));
+
+  gridEl.innerHTML = "";
+
+  countPill.textContent = `${list.length} tool${list.length === 1 ? "" : "s"}`;
+  emptyEl.style.display = list.length ? "none" : "block";
+
+  list.forEach(tool => {
+    const badge = badgeFor(tool);
+    const tagHtml = (tool.tags || []).slice(0, 7).map(t => `<span class="tag">${sanitize(t)}</span>`).join("");
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="cardTop">
+        <div class="titleBlock">
+          <div class="title">${sanitize(tool.name)}</div>
+          <p class="desc">${sanitize(tool.desc || "")}</p>
+        </div>
+        <div class="badge ${badge.cls}">${badge.text}</div>
+      </div>
+
+      <div class="cardBody">
+        <div class="tags">${tagHtml}</div>
+      </div>
+
+      <div class="cardFooter">
+        <a class="btn primary" href="${sanitize(tool.file)}" target="_blank" rel="noopener">Open Tool</a>
+        <div class="meta">
+          <div><span style="color:rgba(255,255,255,0.75);font-weight:800">${groupLabel(tool.group)}</span></div>
+          <div>${sanitize(tool.file)}</div>
+        </div>
+      </div>
+    `;
+    gridEl.appendChild(card);
+  });
+}
+
+filterButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+searchEl.addEventListener("input", render);
+
+render();
+</script>
 </body>
 </html>
