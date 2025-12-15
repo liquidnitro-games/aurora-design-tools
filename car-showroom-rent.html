@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Aurora – Car Showroom Rent Visual Tool</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --frame:#0f1730;
+      --text:rgba(255,255,255,0.9);
+      --muted:rgba(255,255,255,0.65);
+      --good:rgba(98, 247, 171, 0.95);
+      --warn:rgba(255, 201, 77, 0.95);
+      --bad:rgba(255, 110, 110, 0.95);
+      --panel:rgba(12, 18, 38, 0.92);
+      --shadow: 0 18px 55px rgba(0,0,0,0.45);
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background:
+        radial-gradient(1000px 520px at 35% 10%, rgba(120,167,255,0.12), transparent 60%),
+        radial-gradient(900px 520px at 70% 85%, rgba(190,140,255,0.10), transparent 60%),
+        var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      overflow:hidden;
+    }
+    .wrap{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      box-sizing:border-box;
+    }
+
+    /* GAME FRAME */
+    #gameFrame{
+      width:960px;
+      height:540px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02)), var(--frame);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+      user-select:none;
+    }
+
+    /* Subtle background */
+    .bg-grid{
+      position:absolute; inset:0;
+      background:
+        linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 56px 56px;
+      opacity:0.12;
+      pointer-events:none;
+    }
+    .bg-vignette{
+      position:absolute; inset:-40px;
+      background: radial-gradient(700px 420px at 50% 45%, transparent 40%, rgba(0,0,0,0.35) 72%, rgba(0,0,0,0.55) 100%);
+      pointer-events:none;
+      opacity:0.65;
+    }
+
+    /* SHOWROOM */
+    #showroom{
+      position:absolute;
+      right:42px;
+      top:140px;
+      width:250px;
+      height:280px;
+      background: rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.18);
+      border-radius:16px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+    }
+    #showroom .label{
+      position:absolute;
+      left:14px; top:12px;
+      font-size:11px;
+      letter-spacing:0.14em;
+      text-transform:uppercase;
+      color: var(--muted);
+      opacity:0.9;
+      pointer-events:none;
+    }
+    #showroom .door{
+      position:absolute;
+      left:12px;
+      top:50%;
+      transform: translateY(-50%);
+      width:14px;
+      height:120px;
+      border-radius:10px;
+      background: linear-gradient(180deg, rgba(120,167,255,0.32), rgba(120,167,255,0.08));
+      border:1px solid rgba(120,167,255,0.45);
+      box-shadow: 0 0 18px rgba(120,167,255,0.20);
+      pointer-events:none;
+    }
+    #showroom .hint{
+      position:absolute;
+      left:14px;
+      bottom:12px;
+      font-size:12px;
+      color: rgba(255,255,255,0.60);
+      pointer-events:none;
+    }
+
+    /* ENTITIES */
+    #entitiesLayer{ position:absolute; inset:0; }
+
+    .entity{
+      position:absolute;
+      left:0; top:0;
+      transform: translate(-50%,-50%);
+      pointer-events:none;
+    }
+
+    .dot{
+      width:14px; height:14px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.35);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.10);
+    }
+    .dot.player{
+      background: rgba(98, 247, 171, 0.92);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.10), 0 0 16px rgba(98,247,171,0.20);
+    }
+    .dot.npc{
+      background: rgba(255,255,255,0.48);
+    }
+
+    .carMarker{
+      width:30px;
+      height:18px;
+      border-radius:8px;
+      position:relative;
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.10), 0 10px 18px rgba(0,0,0,0.22);
+      background: rgba(255,255,255,0.10);
+    }
+    .carMarker.player{
+      background: linear-gradient(180deg, rgba(98,247,171,0.45), rgba(98,247,171,0.16));
+      border: 1px solid rgba(98,247,171,0.55);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.10), 0 0 18px rgba(98,247,171,0.18);
+    }
+    .carMarker.world{
+      background: linear-gradient(180deg, rgba(120,167,255,0.40), rgba(120,167,255,0.14));
+      border: 1px solid rgba(120,167,255,0.55);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.10), 0 0 18px rgba(120,167,255,0.16);
+    }
+    .carMarker::before{
+      content:"";
+      position:absolute;
+      right:5px; top:4px;
+      width:7px; height:7px;
+      border-radius:5px;
+      background: rgba(255,255,255,0.20);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    /* Name tags (NPC labels ON) */
+    .nameTag{
+      position:absolute;
+      left:50%;
+      top:-14px;
+      transform: translateX(-50%);
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:999px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.82);
+      white-space:nowrap;
+      pointer-events:none;
+    }
+
+    /* HUD (compact) */
+    #hud{
+      position:absolute;
+      left:14px;
+      top:14px;
+      width: 360px;
+      pointer-events:none;
+    }
+    .hudCard{
+      background: rgba(0,0,0,0.24);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      padding:10px 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+    }
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      font-size:12px;
+      color: rgba(255,255,255,0.88);
+      white-space:nowrap;
+    }
+    .pill strong{ font-weight:800; color:rgba(255,255,255,0.95); }
+    .tiny{ font-size:12px; color: rgba(255,255,255,0.72); }
+    #timerBarWrap{
+      margin-top:8px;
+      height:10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      overflow:hidden;
+    }
+    #timerBar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(120,167,255,0.85), rgba(190,140,255,0.75));
+    }
+
+    /* Actions (clickable fix + z-index fix) */
+    #actions{
+      position:absolute;
+      right:14px;
+      top:14px;
+      width: 300px;
+      pointer-events:none;
+      z-index: 30; /* above world/entities */
+    }
+    .actionCard{
+      pointer-events:auto;
+      background: rgba(0,0,0,0.24);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      padding:10px 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+    }
+    .actionTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      color: rgba(255,255,255,0.72);
+      margin-bottom:10px;
+    }
+    .btnRow{
+      display:flex;
+      gap:10px;
+    }
+    button{
+      all: unset;
+      cursor:pointer;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.92);
+      font-size:13px;
+      font-weight:750;
+      letter-spacing:0.01em;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+      text-align:center;
+      min-width:118px;
+    }
+    button:hover{
+      background: rgba(255,255,255,0.11);
+      border-color: rgba(255,255,255,0.26);
+      transform: translateY(-1px);
+    }
+    button:active{ transform: translateY(0px) scale(0.99); }
+    button[disabled]{
+      opacity:0.45;
+      cursor:not-allowed;
+      transform:none !important;
+    }
+    .btnPrimary{
+      background: rgba(120,167,255,0.18);
+      border-color: rgba(120,167,255,0.55);
+    }
+    .btnDanger{
+      background: rgba(255,110,110,0.14);
+      border-color: rgba(255,110,110,0.55);
+    }
+    .hintSmall{
+      margin-top:10px;
+      font-size:12px;
+      color: rgba(255,255,255,0.62);
+      line-height:1.35;
+    }
+
+    /* Mini legend */
+    #legend{
+      position:absolute;
+      left:14px;
+      bottom:14px;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      padding:9px 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.16);
+      pointer-events:none;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      width: 360px;
+      gap:12px;
+    }
+    .kbd{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:22px;
+      padding:3px 7px;
+      border-radius:9px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07);
+      color: rgba(255,255,255,0.88);
+      font-weight:800;
+      font-size:12px;
+      margin-right:6px;
+    }
+    .muted{ color: rgba(255,255,255,0.68); }
+
+    /* SHOWROOM UI OVERLAY */
+    #overlay{
+      position:absolute; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,0.38);
+      backdrop-filter: blur(6px);
+      pointer-events:auto;
+      z-index: 60;
+    }
+    #panel{
+      width: 740px;
+      max-width: calc(100% - 40px);
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius:18px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelHeader{
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid rgba(255,255,255,0.10);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent);
+    }
+    .panelHeader h2{
+      margin:0;
+      font-size:16px;
+      letter-spacing:0.03em;
+    }
+    .panelHeader .sub{
+      font-size:12px;
+      color: rgba(255,255,255,0.68);
+      margin-top:2px;
+    }
+    .panelHeader .left{
+      display:flex;
+      flex-direction:column;
+    }
+    .panelBody{
+      padding:14px 16px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap:10px;
+    }
+    .carCard{
+      background: rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      padding:10px 10px 9px;
+      cursor:pointer;
+      transition: transform 110ms ease, background 110ms ease, border-color 110ms ease;
+      min-height:92px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .carCard:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(255,255,255,0.22);
+    }
+    .carCard.selected{
+      background: rgba(120,167,255,0.16);
+      border-color: rgba(120,167,255,0.62);
+      box-shadow: 0 0 0 2px rgba(120,167,255,0.12);
+    }
+    .carName{ font-size:13px; font-weight:850; line-height:1.15; }
+    .carMeta{ display:flex; flex-direction:column; gap:6px; font-size:12px; color: rgba(255,255,255,0.72); }
+    .priceTag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      width: fit-content;
+      color: rgba(255,255,255,0.85);
+      font-weight:750;
+    }
+    .coinDot, .gemDot{
+      width:8px; height:8px;
+      border-radius:999px;
+      display:inline-block;
+      border:1px solid rgba(0,0,0,0.25);
+    }
+    .coinDot{ background: rgba(255,201,77,0.95); }
+    .gemDot{ background: rgba(190,140,255,0.95); }
+
+    .panelFooter{
+      padding:12px 16px 14px;
+      border-top:1px solid rgba(255,255,255,0.10);
+      background: linear-gradient(180deg, transparent, rgba(255,255,255,0.04));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+    .inlineError{
+      font-size:12px;
+      color: var(--bad);
+      min-height: 16px;
+    }
+
+    /* TOASTS */
+    #toasts{
+      position:absolute;
+      left:50%;
+      bottom:18px;
+      transform: translateX(-50%);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      width:min(520px, calc(100% - 30px));
+      pointer-events:none;
+      z-index: 80;
+    }
+    .toast{
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius:14px;
+      padding:10px 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      animation: pop 180ms ease, fadeOut 240ms ease forwards;
+      animation-delay: 0ms, var(--life, 2600ms);
+    }
+    @keyframes pop{ from{ transform: translateY(10px); opacity:0; } to{ transform: translateY(0px); opacity:1; } }
+    @keyframes fadeOut{ to{ opacity:0; transform: translateY(10px);} }
+    .toast .msg{ font-size:13px; color: rgba(255,255,255,0.92); line-height:1.25; }
+    .toast .tag{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.80);
+      white-space:nowrap;
+      margin-top:1px;
+    }
+    .tag.good{ border-color: rgba(98,247,171,0.45); background: rgba(98,247,171,0.10); }
+    .tag.bad{ border-color: rgba(255,110,110,0.55); background: rgba(255,110,110,0.10); }
+    .tag.warn{ border-color: rgba(255,201,77,0.55); background: rgba(255,201,77,0.10); }
+
+    @media (max-width: 1020px){ #gameFrame{ transform: scale(0.92); transform-origin:center; } }
+    @media (max-width: 900px){
+      #gameFrame{ transform: scale(0.82); }
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div id="gameFrame">
+      <div class="bg-grid"></div>
+      <div class="bg-vignette"></div>
+
+      <!-- Showroom Zone -->
+      <div id="showroom">
+        <div class="label">Car Showroom</div>
+        <div class="door"></div>
+        <div class="hint">Auto-opens UI on zone overlap</div>
+      </div>
+
+      <!-- HUD -->
+      <div id="hud">
+        <div class="hudCard">
+          <div class="row">
+            <div class="pill" id="hudMode"><strong>Mode:</strong> On Foot</div>
+            <div class="pill">
+              <span class="tiny"><strong>Coins:</strong> <span id="coinsVal">200</span></span>
+              <span class="tiny" style="margin-left:10px;"><strong>Gems:</strong> <span id="gemsVal">30</span></span>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <div class="pill" style="flex:1; justify-content:space-between;">
+              <span><strong>Rented:</strong> <span id="hudRented">None</span></span>
+              <span class="tiny muted" id="hudTimerText">Rental time left: --:--</span>
+            </div>
+          </div>
+          <div id="timerBarWrap">
+            <div id="timerBar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div id="actions">
+        <div class="actionCard">
+          <div class="actionTitle">
+            <span><strong>Actions</strong></span>
+            <span id="nearCarHint">Near car: No</span>
+          </div>
+          <div class="btnRow">
+            <button id="exitCarBtn" class="btnDanger" disabled>Exit Car</button>
+            <button id="enterCarBtn" class="btnPrimary" disabled>Enter Car</button>
+          </div>
+          <div class="hintSmall">
+            Tip: you can also press <strong>E</strong> to Enter/Exit (debug).
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Legend -->
+      <div id="legend">
+        <div>
+          <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>
+          <span class="muted">Move</span>
+        </div>
+        <div class="tiny muted">Frame 960×540</div>
+      </div>
+
+      <!-- Entities -->
+      <div id="entitiesLayer"></div>
+
+      <!-- Showroom Overlay -->
+      <div id="overlay" aria-hidden="true">
+        <div id="panel" role="dialog" aria-label="Car Showroom">
+          <div class="panelHeader">
+            <div class="left">
+              <h2>Car Showroom</h2>
+              <div class="sub">Select a car, then <strong>Rent</strong> for <strong>20s</strong> (test). Only you can drive.</div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div class="pill">
+                <span class="tiny"><strong>Coins:</strong> <span id="coinsVal2">200</span></span>
+                <span class="tiny" style="margin-left:10px;"><strong>Gems:</strong> <span id="gemsVal2">30</span></span>
+              </div>
+              <button id="closeShowroomBtn" title="Close showroom UI">Close</button>
+            </div>
+          </div>
+
+          <div class="panelBody">
+            <div class="grid" id="carGrid"></div>
+          </div>
+
+          <div class="panelFooter">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div class="tiny">
+                <strong>Selected:</strong> <span id="selectedCarText" class="muted">None</span>
+              </div>
+              <div class="inlineError" id="inlineError"></div>
+            </div>
+            <div class="footRight">
+              <button id="rentBtn" class="btnPrimary" disabled>Rent</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toasts -->
+      <div id="toasts"></div>
+    </div>
+  </div>
+
+<script>
+/* ==========================================================
+  Aurora – Car Showroom Rent Visual Tool
+  Requested changes:
+  - Exit Car not working -> fix click interception + add debug hotkey
+  - NPC labels back ON
+  - Rental timer set to 20 seconds (testing)
+========================================================== */
+
+/* ---------------------------
+   Constants / Config
+--------------------------- */
+const FRAME_W = 960, FRAME_H = 540;
+const WALK_SPEED = 150;
+const CAR_SPEED  = 240;
+
+// TEST TIMER
+const RENTAL_DURATION = 20; // seconds (requested)
+
+// Spawn slightly outside showroom door
+const CAR_SPAWN_OFFSET = { x: -26, y: 0 };
+
+/* ---------------------------
+   DOM
+--------------------------- */
+const gameFrame = document.getElementById('gameFrame');
+const showroomEl = document.getElementById('showroom');
+const entitiesLayer = document.getElementById('entitiesLayer');
+
+const overlay = document.getElementById('overlay');
+const closeShowroomBtn = document.getElementById('closeShowroomBtn');
+const carGrid = document.getElementById('carGrid');
+const rentBtn = document.getElementById('rentBtn');
+const selectedCarText = document.getElementById('selectedCarText');
+const inlineError = document.getElementById('inlineError');
+
+const coinsVal = document.getElementById('coinsVal');
+const gemsVal = document.getElementById('gemsVal');
+const coinsVal2 = document.getElementById('coinsVal2');
+const gemsVal2 = document.getElementById('gemsVal2');
+
+const hudMode = document.getElementById('hudMode');
+const hudRented = document.getElementById('hudRented');
+const hudTimerText = document.getElementById('hudTimerText');
+const timerBar = document.getElementById('timerBar');
+const nearCarHint = document.getElementById('nearCarHint');
+
+const enterCarBtn = document.getElementById('enterCarBtn');
+const exitCarBtn = document.getElementById('exitCarBtn');
+const toasts = document.getElementById('toasts');
+
+/* ---------------------------
+   State
+--------------------------- */
+const keys = { w:false, a:false, s:false, d:false };
+
+const economy = { coins: 200, gems: 30 };
+
+const cars = [
+  { id:'c1', name:'Street Hatch',  priceType:'coins', price: 80,  rarity:'Common' },
+  { id:'c2', name:'City Sedan',    priceType:'coins', price: 120, rarity:'Common' },
+  { id:'c3', name:'Offroad Buggy', priceType:'coins', price: 160, rarity:'Uncommon' },
+  { id:'c4', name:'Neon Coupe',    priceType:'gems',  price: 18,  rarity:'Rare' },
+  { id:'c5', name:'Aurora GT',     priceType:'gems',  price: 26,  rarity:'Epic' }
+];
+
+let selectedCarId = null;
+let showroomUiOpen = false;
+let wasInsideShowroomZone = false;
+
+const player = { x: 220, y: 260, inCar: false };
+
+const rented = {
+  active: false,
+  carId: null,
+  carName: null,
+  carX: 0,
+  carY: 0,
+  endAt: 0,
+  remaining: 0
+};
+
+const npcs = [];
+const NPC_COUNT = 4;
+
+/* ---------------------------
+   Helpers
+--------------------------- */
+function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+function fmtTime(seconds){
+  const s = Math.max(0, Math.floor(seconds));
+  const mm = String(Math.floor(s/60)).padStart(2,'0');
+  const ss = String(s%60).padStart(2,'0');
+  return `${mm}:${ss}`;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function addToast(message, type='good', lifeMs=2200){
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.style.setProperty('--life', `${lifeMs}ms`);
+  toast.innerHTML = `<div class="msg">${escapeHtml(message)}</div><div class="tag ${type}">${type==='good'?'OK':type==='warn'?'NOTE':'ERROR'}</div>`;
+  toasts.appendChild(toast);
+  setTimeout(()=> toast.remove(), lifeMs + 450);
+}
+function setInlineError(text){ inlineError.textContent = text || ''; }
+function updateEconomyUI(){
+  coinsVal.textContent = economy.coins;
+  gemsVal.textContent = economy.gems;
+  coinsVal2.textContent = economy.coins;
+  gemsVal2.textContent = economy.gems;
+}
+function setHud(){
+  hudMode.innerHTML = `<strong>Mode:</strong> ${player.inCar ? 'Driving' : 'On Foot'}`;
+  hudRented.textContent = rented.active ? rented.carName : 'None';
+  if(!rented.active){
+    hudTimerText.textContent = 'Rental time left: --:--';
+    timerBar.style.width = '0%';
+  }
+}
+function getFrameRect(){ return gameFrame.getBoundingClientRect(); }
+function rectsOverlap(a, b){
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+}
+
+/* ---------------------------
+   Entities
+--------------------------- */
+function createEntityEl(kind, label){
+  const wrap = document.createElement('div');
+  wrap.className = 'entity';
+  const shape = document.createElement('div');
+
+  if(kind === 'playerDot') shape.className = 'dot player';
+  else if(kind === 'playerCar') shape.className = 'carMarker player';
+  else if(kind === 'npc') shape.className = 'dot npc';
+  else if(kind === 'worldCar') shape.className = 'carMarker world';
+
+  const tag = document.createElement('div');
+  tag.className = 'nameTag';
+  tag.textContent = label;
+
+  wrap.appendChild(shape);
+  wrap.appendChild(tag);
+  entitiesLayer.appendChild(wrap);
+
+  return { wrap, shape, tag };
+}
+
+const playerElDot = createEntityEl('playerDot','You');
+const playerElCar = createEntityEl('playerCar','You');
+playerElCar.wrap.style.display = 'none';
+
+let worldCarEl = null;
+
+function initNpcs(){
+  for(let i=0;i<NPC_COUNT;i++){
+    const npc = {
+      x: 240 + i*85,
+      y: 130 + (i%2)*220,
+      vx: (Math.random()*2-1)*18,
+      vy: (Math.random()*2-1)*18,
+      changeAt: performance.now() + 900 + Math.random()*1600,
+      el: createEntityEl('npc', `NPC ${i+1}`)
+    };
+    npcs.push(npc);
+  }
+}
+
+/* ---------------------------
+   Showroom UI
+--------------------------- */
+function buildCarGrid(){
+  carGrid.innerHTML = '';
+  cars.forEach(car => {
+    const card = document.createElement('div');
+    card.className = 'carCard';
+    card.dataset.id = car.id;
+    card.innerHTML = `
+      <div class="carName">${escapeHtml(car.name)}</div>
+      <div class="carMeta">
+        <div>Rarity: ${escapeHtml(car.rarity)}</div>
+        <div class="priceTag">
+          <span class="${car.priceType === 'coins' ? 'coinDot' : 'gemDot'}"></span>
+          <span>${car.price} ${car.priceType === 'coins' ? 'Coins' : 'Gems'}</span>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => selectCar(car.id));
+    carGrid.appendChild(card);
+  });
+}
+function selectCar(id){
+  selectedCarId = id;
+  setInlineError('');
+  const car = cars.find(c => c.id === id);
+  selectedCarText.textContent = car ? `${car.name} (${car.price} ${car.priceType === 'coins' ? 'Coins' : 'Gems'})` : 'None';
+  rentBtn.disabled = !car;
+  [...carGrid.querySelectorAll('.carCard')].forEach(el=>{
+    el.classList.toggle('selected', el.dataset.id === id);
+  });
+}
+function openShowroomUI(){
+  if(showroomUiOpen) return;
+  showroomUiOpen = true;
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden','false');
+  setInlineError('');
+  updateEconomyUI();
+}
+function closeShowroomUI(){
+  showroomUiOpen = false;
+  overlay.style.display = 'none';
+  overlay.setAttribute('aria-hidden','true');
+  setInlineError('');
+}
+
+/* ---------------------------
+   Rental
+--------------------------- */
+function canAfford(car){
+  return car.priceType === 'coins' ? economy.coins >= car.price : economy.gems >= car.price;
+}
+function deductCost(car){
+  if(car.priceType === 'coins') economy.coins -= car.price;
+  else economy.gems -= car.price;
+}
+function spawnOutsideShowroom(){
+  const sr = showroomEl.getBoundingClientRect();
+  const fr = getFrameRect();
+  const doorCenterY = sr.top + sr.height/2;
+  const spawnX = (sr.left - fr.left) + CAR_SPAWN_OFFSET.x;
+  const spawnY = (doorCenterY - fr.top) + CAR_SPAWN_OFFSET.y;
+  player.x = clamp(spawnX, 12, FRAME_W-12);
+  player.y = clamp(spawnY, 12, FRAME_H-12);
+}
+function beginRental(car){
+  rented.active = true;
+  rented.carId = car.id;
+  rented.carName = car.name;
+  rented.endAt = performance.now() + RENTAL_DURATION * 1000;
+  rented.remaining = RENTAL_DURATION;
+
+  spawnOutsideShowroom();
+  rented.carX = player.x;
+  rented.carY = player.y;
+
+  if(!worldCarEl) worldCarEl = createEntityEl('worldCar', car.name);
+  worldCarEl.tag.textContent = car.name;
+
+  player.inCar = true;
+  playerElDot.wrap.style.display = 'none';
+  playerElCar.wrap.style.display = 'block';
+
+  closeShowroomUI();
+  addToast(`Rented ${car.name} for ${RENTAL_DURATION}s.`, 'good');
+  setHud();
+}
+function endRental(){
+  rented.active = false;
+  rented.carId = null;
+  rented.carName = null;
+  rented.endAt = 0;
+  rented.remaining = 0;
+
+  if(worldCarEl){
+    worldCarEl.wrap.remove();
+    worldCarEl = null;
+  }
+
+  if(player.inCar){
+    player.inCar = false;
+    playerElCar.wrap.style.display = 'none';
+    playerElDot.wrap.style.display = 'block';
+  }
+
+  enterCarBtn.disabled = true;
+  exitCarBtn.disabled = true;
+  nearCarHint.textContent = 'Near car: No';
+
+  addToast('Rental ended. Car returned to showroom.', 'warn', 2800);
+  setHud();
+}
+
+/* ---------------------------
+   Enter/Exit (FIXED)
+--------------------------- */
+function isNearRentedCar(){
+  if(!rented.active) return false;
+  const dx = player.x - rented.carX;
+  const dy = player.y - rented.carY;
+  return Math.hypot(dx, dy) <= 26;
+}
+function enterCar(){
+  if(!rented.active){ addToast('No active rental.', 'warn'); return; }
+  if(player.inCar) return;
+  if(!isNearRentedCar()){ addToast('Move closer to the rented car to enter.', 'warn'); return; }
+
+  player.inCar = true;
+  player.x = rented.carX;
+  player.y = rented.carY;
+
+  playerElDot.wrap.style.display = 'none';
+  playerElCar.wrap.style.display = 'block';
+
+  addToast(`Entered ${rented.carName}.`, 'good');
+  setHud();
+}
+function exitCar(){
+  // IMPORTANT: Always allow exit while driving, independent of "near car" UI state
+  if(!player.inCar){
+    addToast('You are already on foot.', 'warn');
+    return;
+  }
+
+  // Car stays in world at current position
+  rented.carX = player.x;
+  rented.carY = player.y;
+
+  player.inCar = false;
+  player.x = clamp(rented.carX - 22, 12, FRAME_W-12);
+  player.y = clamp(rented.carY, 12, FRAME_H-12);
+
+  playerElCar.wrap.style.display = 'none';
+  playerElDot.wrap.style.display = 'block';
+
+  addToast('Exited car.', 'good');
+  setHud();
+}
+
+/* ---------------------------
+   Input (WASD + E debug)
+--------------------------- */
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if(k === 'w') keys.w = true;
+  if(k === 'a') keys.a = true;
+  if(k === 's') keys.s = true;
+  if(k === 'd') keys.d = true;
+
+  // Debug enter/exit hotkey
+  if(k === 'e'){
+    if(player.inCar) exitCar();
+    else enterCar();
+  }
+
+  if(['w','a','s','d'].includes(k)) e.preventDefault();
+});
+window.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if(k === 'w') keys.w = false;
+  if(k === 'a') keys.a = false;
+  if(k === 's') keys.s = false;
+  if(k === 'd') keys.d = false;
+});
+
+/* ---------------------------
+   Buttons (ensure clicks always work)
+--------------------------- */
+closeShowroomBtn.addEventListener('click', closeShowroomUI);
+rentBtn.addEventListener('click', () => {
+  setInlineError('');
+  const car = cars.find(c => c.id === selectedCarId);
+  if(!car){
+    setInlineError('Select a car first.');
+    addToast('Select a car to rent.', 'warn');
+    return;
+  }
+  if(rented.active){
+    setInlineError('You already have a rented car.');
+    addToast('You already have a rented car.', 'warn');
+    return;
+  }
+  if(!canAfford(car)){
+    const msg = car.priceType === 'coins' ? 'Insufficient coins.' : 'Insufficient gems.';
+    setInlineError(msg);
+    addToast(msg, 'bad');
+    return;
+  }
+  deductCost(car);
+  updateEconomyUI();
+  beginRental(car);
+});
+
+enterCarBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); enterCar(); });
+exitCarBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); exitCar(); });
+
+/* ---------------------------
+   Showroom auto-open collision (DOMRects)
+--------------------------- */
+function getPlayerRect(){
+  const el = player.inCar ? playerElCar.wrap : playerElDot.wrap;
+  return el.getBoundingClientRect();
+}
+function handleShowroomAutoOpen(){
+  const inside = rectsOverlap(getPlayerRect(), showroomEl.getBoundingClientRect());
+  if(inside && !wasInsideShowroomZone){
+    openShowroomUI();
+    addToast('Entered showroom zone. UI opened.', 'good', 1400);
+  }
+  wasInsideShowroomZone = inside;
+}
+
+/* ---------------------------
+   NPC wander
+--------------------------- */
+function updateNpcs(dt){
+  const now = performance.now();
+  for(const n of npcs){
+    if(now > n.changeAt){
+      n.changeAt = now + 900 + Math.random()*1700;
+      const speed = 8 + Math.random()*26;
+      const ang = Math.random()*Math.PI*2;
+      n.vx = Math.cos(ang)*speed;
+      n.vy = Math.sin(ang)*speed;
+    }
+    n.x += n.vx * dt;
+    n.y += n.vy * dt;
+
+    if(n.x < 18){ n.x = 18; n.vx *= -1; }
+    if(n.x > FRAME_W-18){ n.x = FRAME_W-18; n.vx *= -1; }
+    if(n.y < 18){ n.y = 18; n.vy *= -1; }
+    if(n.y > FRAME_H-18){ n.y = FRAME_H-18; n.vy *= -1; }
+  }
+}
+
+/* ---------------------------
+   Movement + Timer
+--------------------------- */
+function updatePlayer(dt){
+  let vx = 0, vy = 0;
+  if(keys.w) vy -= 1;
+  if(keys.s) vy += 1;
+  if(keys.a) vx -= 1;
+  if(keys.d) vx += 1;
+
+  const len = Math.hypot(vx,vy);
+  if(len > 0){ vx /= len; vy /= len; }
+
+  const speed = player.inCar ? CAR_SPEED : WALK_SPEED;
+
+  player.x = clamp(player.x + vx * speed * dt, 12, FRAME_W-12);
+  player.y = clamp(player.y + vy * speed * dt, 12, FRAME_H-12);
+
+  // Driving moves the rented car too
+  if(rented.active && player.inCar){
+    rented.carX = player.x;
+    rented.carY = player.y;
+  }
+}
+
+function updateRentalTimer(){
+  if(!rented.active) return;
+  const now = performance.now();
+  const remainingMs = Math.max(0, rented.endAt - now);
+  rented.remaining = remainingMs / 1000;
+
+  hudTimerText.textContent = `Rental time left: ${fmtTime(rented.remaining)}`;
+  const pct = clamp((rented.remaining / RENTAL_DURATION) * 100, 0, 100);
+  timerBar.style.width = `${pct}%`;
+
+  if(rented.remaining <= 0.0001) endRental();
+}
+
+/* ---------------------------
+   Context actions
+--------------------------- */
+function updateContextActions(){
+  const near = isNearRentedCar();
+  nearCarHint.textContent = `Near car: ${near ? 'Yes' : 'No'}`;
+
+  // Exit should ALWAYS be enabled while driving (this is the key bug users hit)
+  exitCarBtn.disabled = !player.inCar;
+
+  // Enter enabled only when on foot + rental active + near
+  enterCarBtn.disabled = !(rented.active && !player.inCar && near);
+}
+
+/* ---------------------------
+   Render
+--------------------------- */
+function setEntityPos(wrap, x, y){
+  wrap.style.left = `${x}px`;
+  wrap.style.top  = `${y}px`;
+}
+function render(){
+  if(player.inCar){
+    setEntityPos(playerElCar.wrap, player.x, player.y);
+  }else{
+    setEntityPos(playerElDot.wrap, player.x, player.y);
+  }
+
+  if(rented.active && worldCarEl){
+    setEntityPos(worldCarEl.wrap, rented.carX, rented.carY);
+    worldCarEl.tag.textContent = rented.carName || 'Car';
+  }
+
+  for(const n of npcs){
+    setEntityPos(n.el.wrap, n.x, n.y);
+  }
+}
+
+/* ---------------------------
+   Main loop
+--------------------------- */
+let last = performance.now();
+function tick(now){
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+
+  updatePlayer(dt);
+  updateNpcs(dt);
+
+  // Render once so DOMRects are accurate
+  render();
+  handleShowroomAutoOpen();
+
+  updateRentalTimer();
+  updateContextActions();
+  setHud();
+
+  render();
+  requestAnimationFrame(tick);
+}
+
+/* ---------------------------
+   Init
+--------------------------- */
+function init(){
+  buildCarGrid();
+  updateEconomyUI();
+  selectCar(null);
+  initNpcs();
+  setHud();
+  render();
+
+  addToast('WASD to move. Walk into showroom to open UI. Press E to Enter/Exit (debug).', 'good', 3200);
+  requestAnimationFrame(tick);
+}
+init();
+</script>
+</body>
+</html>
